@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>enter the artists playlists</title>
+</head>
+<body>
+  <form action="playlistValidate" method="post" class="form-example" id="playlistValidate">
+    {% for artist in artistLs %}
+      <div class="artistContainer">
+        <label class="artist"><a href="{{ artist['url'] }}" title="{{ artist['genreDisplay'] }}">{{ artist["name"] }}</a></label>
+        {% if artist["playlists"]|length > 0 %}
+          {% for playlist in artist["playlists"] %}
+            <input required type="text" form="playlistValidate" class="playlist" value="{{ playlist['name'] }}" name="{{ artist['name'] }}"></input>
+          {% endfor %}
+        {% else %}
+          <input required type="text" form="playlistValidate" class="playlist" name="{{ artist['name'] }}"></input>
+        {% endif %}
+        <div class="addinput" data-artistname="{{ artist['name'] }}">add a playlist</div>
+      </div>
+    {% endfor %}
+    <button id="gobutton" value="go">GO</button>
+  </form>
+</body>
+<style>
+  .artistContainer {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+  .addinput {
+    border: 1px solid;
+    margin-left: 1em;
+    padding: 5px 5px;
+  }
+</style>
+<script>
+for (let elem of document.querySelectorAll(".addinput")) {
+  elem.addEventListener("click", function(event) {
+    console.log(event.target)
+    let newinput = document.createElement("input");
+    newinput.setAttribute("class", "playlist")
+    newinput.type = "text"
+    newinput.setAttribute("form", "playlistValidate")
+    newinput.name = event.target.getAttribute("data-artistname");
+    newinput.required = true;
+    console.log(newinput);
+    event.target.parentNode.insertBefore(newinput, event.target);
+  }, false);
+}
+// should try to use requests.form.getlist insted of this
+document.getElementById("gobutton").addEventListener("click", function(event) {
+  event.preventDefault()
+  let form = new FormData(document.querySelector('#playlistValidate'))
+  let returnObj = []
+  for (let elem of form.entries()) {
+    let key = elem[0]
+    let val = elem[1]
+    if (! val.match(/^\s*$/)) {
+      returnObj.push([key, val])
+    }
+  }
+  console.log(returnObj)
+  let xhr = new XMLHttpRequest();
+  let url = document.location.protocol + "//" + document.location.host + "/playlistValidate";
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+          console.log(xhr)
+          window.location = xhr.responseURL // thats not pretty tho
+      }
+  };
+  let data = JSON.stringify(returnObj);
+  xhr.send(data);
+}, false);
+</script>
+</html>

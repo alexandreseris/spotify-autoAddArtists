@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>param</title>
+</head>
+<body>
+  <div>
+    <form action="deleteChoices" method="POST" id="deleteForm">
+        <div>
+          <input form="deleteForm" type="checkbox" name="delSpotifyPlaylists" id="delSpotifyPlaylists">
+          <label for="delSpotifyPlaylists">delete playlists created by the script (CAUTION!) ?</label>
+        </div>
+
+        <div>
+          <input form="deleteForm" type="checkbox" name="livesDelete" id="livesDelete" checked>
+          <label for="livesDelete">exclude lives?</label>
+        </div>
+        <div>
+          <input form="deleteForm" type="checkbox" name="instrumentalDelete" id="instrumentalDelete" checked>
+          <label for="instrumentalDelete">exclude instrumentals?</label>
+        </div>
+        <div>
+          <input form="deleteForm" type="checkbox" name="demoDelete" id="demoDelete" checked>
+          <label for="demoDelete">exclude demos?</label>
+        </div>
+        <div>
+          <input form="deleteForm" type="checkbox" name="remixDelete" id="remixDelete">
+          <label for="remixDelete">exclude remixes?</label>
+        </div>
+        <div>
+          <input form="deleteForm" type="checkbox" name="duplicatesDelete" id="duplicatesDelete" checked>
+          <label for="duplicatesDelete">remove duplicates?</label>
+        </div>
+
+        <div>
+          <input form="deleteForm" type="checkbox" name="spotifyRetrieve" id="spotifyRetrieve" checked>
+          <label for="spotifyRetrieve">retrieve data on spotify? (uncheck if you launched the programme earlier and you got the tracks saved locaaly but you did not enter and validate the artists's playlists</label>
+        </div>
+      <input form="deleteForm" type="submit" value="go">
+    </form>
+    <p>this form may take a really long time to validate</p>
+    <p>it actually depend on the number of artist you subscribed and their number of track associated and if you check the duplicate remove checkbox</p>
+    <p>if you wish to make some manual cleanup yourself on the data retrieved by spotify's api, you can do so after this form is validated using sql (sqlite)</p>
+  </div>
+</body>
+</html>

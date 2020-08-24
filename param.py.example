@@ -1,0 +1,30 @@
+# documentation for app registration and app settings: https://developer.spotify.com/documentation/general/guides/app-settings/#register-your-app
+localServerName = "you server name, should be localhost"
+localServerPort = whateverportYouwishAsInteger
+localServerPage = "the page name you want, index is a good choice"
+# dont forget to add the redirect page to your app setting.
+# the app will have the following form: "http://" + localServerName + ":" + localServerPort + "/" + localServerPage
+# for instance http://localhost:8888/index
+
+spotifyApiClientId = "yourClientId"
+spotifyApiSecret = "yourClientSecret"
+
+# documentation for scopes: https://developer.spotify.com/documentation/general/guides/authorization-guide/#list-of-scopes
+spotifyApiScopeLs = [
+    "playlist-read-collaborative",
+    "playlist-read-private",
+    "playlist-modify-public",
+    "playlist-modify-private",
+    "user-follow-read",
+    "user-library-read",
+    "user-read-email",
+    "user-read-private",
+]
+
+# your country code on two char https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+countryCode = ""
+
+# the suffix you wish to add to you playlist to quickly identy them as beeing managed by this app
+# be carefull, spotify allow to have several playlist with the same name
+# so you should take care of choosing a string which will not be used in your personnal playlists name
+playlistSuffix = " playlist API"
