@@ -6,73 +6,124 @@
   <title>enter the artists playlists</title>
 </head>
 <body>
-  <form action="playlistValidate" method="post" class="form-example" id="playlistValidate">
+  <datalist id="playlistLs">
+    {% for playlist in playlistLs %}
+      <option value="{{ playlist }}">
+    {% endfor %}
+  </datalist>
+  <form action="playlistValidate" method="post" class="form-example" id="playlistValidate" onkeydown="return event.key != 'Enter';">
+    <table>
+      <thead>
+          <tr>
+              <th colspan="3">Please enter zero, one or more playlist for each artist</th>
+          </tr>
+      </thead>
+      <tbody>
     {% for artist in artistLs %}
-      <div class="artistContainer">
-        <label class="artist"><a href="{{ artist['url'] }}" title="{{ artist['genreDisplay'] }}">{{ artist["name"] }}</a></label>
+      <tr>
+        <td>
+          <button type="button" class="playlistButton" id="addplaylistbutton" data-artistname="{{ artist['name'] }}" title="Add a playlist">+</button>
+        </td>
+        <td>
+          <button type="button" class="playlistButton" id="removeplaylistbutton" title="Remove empty playlist inputs">-</button>
+        </td>
+        <td>
+          <label class="artist">
+            {% if artist['url'] != "" %}
+              <a href="{{ artist['url'] }}" title="{{ artist['genreDisplay'] }}">{{ artist["name"] }}</a>
+            {% else %}
+              <div title="{{ artist['genreDisplay'] }}">{{ artist["name"] }}</div>
+            {% endif %}
+          </label>
+        </td>
         {% if artist["playlists"]|length > 0 %}
           {% for playlist in artist["playlists"] %}
-            <input required type="text" form="playlistValidate" class="playlist" value="{{ playlist['name'] }}" name="{{ artist['name'] }}"></input>
+            <td>
+              <input type="text" list="playlistLs" form="playlistValidate" class="playlistInput" value="{{ playlist['name'] }}" name="{{ artist['name'] }}"></input>
+            </td>
           {% endfor %}
         {% else %}
-          <input required type="text" form="playlistValidate" class="playlist" name="{{ artist['name'] }}"></input>
+          <td>
+            <input type="text" list="playlistLs" form="playlistValidate" class="playlistInput" name="{{ artist['name'] }}"></input>
+          </td>
         {% endif %}
-        <div class="addinput" data-artistname="{{ artist['name'] }}">add a playlist</div>
-      </div>
+      </tr>
     {% endfor %}
-    <button id="gobutton" value="go">GO</button>
+      </tbody>
+    </table>
+    <button type="submit" id="gobutton" value="go">GO</button>
   </form>
 </body>
+
 <style>
-  .artistContainer {
-    display: flex;
-    flex-wrap: nowrap;
-  }
-  .addinput {
-    border: 1px solid;
-    margin-left: 1em;
-    padding: 5px 5px;
-  }
 </style>
+
+
 <script>
-for (let elem of document.querySelectorAll(".addinput")) {
-  elem.addEventListener("click", function(event) {
-    console.log(event.target)
-    let newinput = document.createElement("input");
-    newinput.setAttribute("class", "playlist")
-    newinput.type = "text"
-    newinput.setAttribute("form", "playlistValidate")
-    newinput.name = event.target.getAttribute("data-artistname");
-    newinput.required = true;
-    console.log(newinput);
-    event.target.parentNode.insertBefore(newinput, event.target);
+function refreshPlaylistOptions() {
+  let newPlaylistList = Array.from(
+      new Set(
+        Array.from(
+          document.querySelectorAll(".playlistInput"))
+            .map(function (elem) {
+              return elem.value
+            })
+      )
+    ).filter(function(elem) {
+      if (elem.match(/^\s*$/)) {
+        return false
+      } else {
+        return true
+      }
+    })
+    newPlaylistList.sort()
+    let datalist = document.getElementById("playlistLs")
+
+    while (datalist.firstChild) {
+      datalist.removeChild(datalist.firstChild);
+    }
+
+    for (let playlistElem of newPlaylistList) {
+      let newOption = document.createElement("option")
+      newOption.value = playlistElem
+      datalist.appendChild(newOption)
+    }
+}
+
+for (let elem of document.querySelectorAll(".playlistInput")) {
+  elem.addEventListener("change", function(event) {
+    refreshPlaylistOptions()
   }, false);
 }
-// should try to use requests.form.getlist insted of this
-document.getElementById("gobutton").addEventListener("click", function(event) {
-  event.preventDefault()
-  let form = new FormData(document.querySelector('#playlistValidate'))
-  let returnObj = []
-  for (let elem of form.entries()) {
-    let key = elem[0]
-    let val = elem[1]
-    if (! val.match(/^\s*$/)) {
-      returnObj.push([key, val])
-    }
-  }
-  console.log(returnObj)
-  let xhr = new XMLHttpRequest();
-  let url = document.location.protocol + "//" + document.location.host + "/playlistValidate";
-  xhr.open("POST", url, true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-          console.log(xhr)
-          window.location = xhr.responseURL // thats not pretty tho
+
+for (let elem of document.querySelectorAll("#addplaylistbutton")) {
+  elem.addEventListener("click", function(event) {
+    event.preventDefault()
+    let newinput = document.createElement("input");
+    newinput.type = "text"
+    newinput.setAttribute("list", "playlistLs")
+    newinput.setAttribute("form", "playlistValidate")
+    newinput.setAttribute("class", "playlistInput")
+    newinput.name = event.target.getAttribute("data-artistname");
+    newinput.addEventListener("change", function(event) {
+      refreshPlaylistOptions()
+    }, false);
+    let newtd = document.createElement("td");
+    newtd.appendChild(newinput)
+    event.target.parentNode.parentNode.appendChild(newtd);
+  }, false);
+}
+
+
+for (let elem of document.querySelectorAll("#removeplaylistbutton")) {
+  elem.addEventListener("click", function(event) {
+    event.preventDefault()
+    for (let input of event.target.parentNode.parentNode.querySelectorAll("input.playlistInput")) {
+      if (input.value.match(/^\s*$/)) {
+        input.parentNode.remove();
       }
-  };
-  let data = JSON.stringify(returnObj);
-  xhr.send(data);
-}, false);
+    }
+  }, false);
+}
 </script>
 </html>

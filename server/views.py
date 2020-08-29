@@ -91,9 +91,10 @@ def deleteChoices():
             print("\n\nartist: " + str(artistCount) + "/" + str(artistListLen))
             artistId = artist["id"]
             artistName = artist["name"].lower()
-            artistGenre = str(artist["genres"])
+            artistGenre = " ".join(artist["genres"])
             try:
-                artistUrl = artist["external_urls"]["spotify"]
+                # artistUrl = artist["external_urls"]["spotify"]  # thats the web link tho
+                artistUrl = artist["uri"]  # thats the app url
             except Exception:
                 artistUrl = ""
             # artist insert in db
@@ -277,56 +278,64 @@ def playlistInput():
     db.connect()
     artistLs = []
     for artistname, artistid, genre, url in db.select(
-            "select name, id, genre, url from artist"):
+            "select name, id, genre, url from artist order by name"):
         artistDict = {
             "name": artistname,
             "id": artistid,
-            "genreDisplay": "(genres chopés dans spotify " + genre + ")",
+            "genreDisplay": "spotify's artist's genre: " + genre,
             "url": url,
             "playlists": []
         }
         for playlistname, playlistid in db.select("select playlist.name, playlist.id from artistPlaylist " + \
             "inner join playlist on artistPlaylist.playlistId = playlist.id " + \
-            "where artistPlaylist.artistId = {}".format(db.formatSqlString(artistid))):
+            "where artistPlaylist.artistId = {} order by playlist.name".format(db.formatSqlString(artistid))):
 
             artistDict["playlists"].append({
                 "name": playlistname,
                 "id": playlistid
             })
         artistLs.append(artistDict)
+    playlistLs = [
+        x[0] for x in db.select("select name from playlist order by name;")
+    ]
     db.close()
-    return render_template('playlistInput.html', artistLs=artistLs)
+    return render_template('playlistInput.html',
+                           artistLs=artistLs,
+                           playlistLs=playlistLs)
 
 
 def playlistValidate():
+    return str(request.form.keys())
     db.connect()
-    # for each artist we ask the user one or more playlist
     db.delete("delete from artistPlaylist;")
-    for artistName, playlistName in request.json:
-        artistSearch = db.select(
-            "select id from artist where name = {}".format(
-                db.formatSqlString(artistName)))
-        artistId = artistSearch[0][0]
-        artistPlaylistSearch = db.select("""
-            select p.name, a.id
-            from artist a
-            inner join artistPlaylist ap on a.id = ap.artistId
-            inner join playlist p on p.id = ap.playlistId
-            where a.id = {} and p.name = {}""".format(
-            db.formatSqlString(artistId), db.formatSqlString(playlistName)))
-        if len(artistPlaylistSearch) == 0:
-            playlistSearch = db.select(
-                "select id from playlist where name = {}".format(
+    for artistName in request.form.keys():
+        for playlistName in request.form.getlist(artistName):
+            if not re.search(r"^\s*$", playlistName):
+                artistSearch = db.select(
+                    "select id from artist where name = {}".format(
+                        db.formatSqlString(artistName)))
+                artistId = artistSearch[0][0]
+                artistPlaylistSearch = db.select("""
+                    select p.name, a.id
+                    from artist a
+                    inner join artistPlaylist ap on a.id = ap.artistId
+                    inner join playlist p on p.id = ap.playlistId
+                    where a.id = {} and p.name = {}""".format(
+                    db.formatSqlString(artistId),
                     db.formatSqlString(playlistName)))
-            if len(playlistSearch) == 0:
-                playlistId = db.select(
-                    "select max(id) + 1 from playlist")[0][0]
-                if playlistId is None:
-                    playlistId = 0
-                db.insert("playlist", (playlistId, playlistName))
-            else:
-                playlistId = playlistSearch[0][0]
-            db.insert("artistPlaylist", (artistId, playlistId))
+                if len(artistPlaylistSearch) == 0:
+                    playlistSearch = db.select(
+                        "select id from playlist where name = {}".format(
+                            db.formatSqlString(playlistName)))
+                    if len(playlistSearch) == 0:
+                        playlistId = db.select(
+                            "select max(id) + 1 from playlist")[0][0]
+                        if playlistId is None:
+                            playlistId = 0
+                        db.insert("playlist", (playlistId, playlistName))
+                    else:
+                        playlistId = playlistSearch[0][0]
+                    db.insert("artistPlaylist", (artistId, playlistId))
     db.commit()
     # creating or retrieving playlists
     for playlistName, playlistId in db.select(
@@ -336,8 +345,8 @@ def playlistValidate():
         if playlistNameWithSuffix not in [
                 x[0] for x in spotifyData["playlists"]
         ]:
-            playlistId = spotify.createPlaylist(spotifyData["user"],
-                                                playlistName)[0]["id"]
+            playlistId = spotify.createPlaylist(
+                spotifyData["user"], playlistNameWithSuffix)[0]["id"]
         else:
             playlistId = [
                 x[1] for x in spotifyData["playlists"]
