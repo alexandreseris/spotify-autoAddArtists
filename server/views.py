@@ -305,7 +305,6 @@ def playlistInput():
 
 
 def playlistValidate():
-    return str(request.form.keys())
     db.connect()
     db.delete("delete from artistPlaylist;")
     for artistName in request.form.keys():
